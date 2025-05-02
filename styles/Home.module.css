@@ -1,0 +1,38 @@
+/* styles/Home.module.css */
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.tweetFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading, .error, .noTweets {
+  padding: 20px;
+  text-align: center;
+  background-color: #f7f9fa;
+  border-radius: 12px;
+  margin-top: 20px;
+}
+
+.loading {
+  color: #536471;
+}
+
+.error {
+  color: #e0245e;
+}
+
+.noTweets {
+  color: #536471;
+}
