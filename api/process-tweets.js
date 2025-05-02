@@ -5,7 +5,6 @@ import path from 'path';
 export default async function handler(req, res) {
   try {
     // Define the path to the data directory
-    // In Vercel, your data directory should be included in your deployment
     const dataDirectory = path.join(process.cwd(), 'data');
     
     // Check if directory exists
@@ -33,7 +32,7 @@ export default async function handler(req, res) {
         const fileContent = fs.readFileSync(filePath, 'utf8');
         const rawData = JSON.parse(fileContent);
         
-        // Process the user data (customize this based on your JSON structure)
+        // Process the user data
         userData[userId] = processUserData(rawData);
         
       } catch (fileError) {
@@ -64,12 +63,32 @@ export default async function handler(req, res) {
  * @returns {Object} - Processed user data
  */
 function processUserData(userData) {
-  // This is a placeholder - customize based on your JSON structure
+  // Make sure we preserve all tweet text completely
+  let tweets = [];
+  
+  if (Array.isArray(userData.tweets)) {
+    tweets = userData.tweets.map(tweet => {
+      // Ensure the full text of each tweet is preserved
+      return {
+        id: tweet.id || generateId(),
+        text: tweet.text || "",  // This ensures we have the complete text
+        date: tweet.date || tweet.created_at || new Date().toISOString(),
+        likes: tweet.likes || tweet.like_count || 0,
+        comments: tweet.comments || tweet.reply_count || 0,
+        bookmarks: tweet.bookmarks || 0,
+        replyingTo: tweet.replyingTo || tweet.in_reply_to_user || null,
+        // Include any other tweet data that might be useful
+        media: tweet.media || []
+      };
+    });
+  }
+  
   return {
     username: userData.username || 'unknown',
-    tweetCount: Array.isArray(userData.tweets) ? userData.tweets.length : 0,
-    tweets: userData.tweets || [],
-    // Add more processing as needed
+    displayName: userData.displayName || userData.display_name || userData.name || userData.username || 'Unknown User',
+    profileImage: userData.profileImage || userData.profile_image_url || null,
+    tweetCount: tweets.length,
+    tweets: tweets
   };
 }
 
@@ -92,4 +111,13 @@ function getStatistics(allUserData) {
     totalTweets,
     users
   };
+}
+
+/**
+ * Generate a random ID for tweets that don't have one
+ * @returns {string} - Random ID
+ */
+function generateId() {
+  return Math.random().toString(36).substring(2, 15) + 
+         Math.random().toString(36).substring(2, 15);
 }
