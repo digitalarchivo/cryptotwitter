@@ -1,399 +1,619 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Crypto Twitter Tweet Archive</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      line-height: 1.5;
-      color: #333;
-      background: #fff;
-    }
-    
-    .container {
-      max-width: 930px;
-      margin: 0 auto;
-      padding: 0 15px;
-    }
-    
-    header {
-      background: #1e2b38;
-      color: white;
-      padding: 20px 0;
-    }
-    
-    header h1 {
-      margin: 0 0 15px 0;
-    }
-    
-    header p {
-      margin: 5px 0;
-      font-size: 14px;
-    }
-    
-    .stats {
-      margin: 20px 0;
-    }
-    
-    .stats-count {
-      display: flex;
-      gap: 20px;
-    }
-    
-    .stat {
-      margin-right: 20px;
-    }
-    
-    .stat-number {
-      font-size: 24px;
-      font-weight: bold;
-      margin: 0;
-    }
-    
-    .stat-label {
-      margin: 0;
-      color: #666;
-      font-size: 12px;
-      text-transform: uppercase;
-    }
-    
-    .archive-heading {
-      margin: 30px 0 15px 0;
-    }
-    
-    .filters {
-      margin-bottom: 20px;
-      display: flex;
-      gap: 10px;
-    }
-    
-    select, input {
-      padding: 6px 10px;
-      border: 1px solid #ddd;
-      border-radius: 3px;
-    }
-    
-    .tweet {
-      border: 1px solid #e1e8ed;
-      border-radius: 5px;
-      padding: 15px;
-      margin-bottom: 15px;
-      background: white;
-    }
-    
-    .tweet-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    
-    .avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      margin-right: 10px;
-    }
-    
-    .default-avatar {
-      background: #1da1f2;
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-    }
-    
-    .user-info {
-      flex: 1;
-    }
-    
-    .user-name {
-      font-weight: bold;
-      margin: 0;
-    }
-    
-    .user-screen-name {
-      color: #657786;
-      margin: 0;
-      font-size: 14px;
-    }
-    
-    .tweet-date {
-      color: #657786;
-      font-size: 14px;
-    }
-    
-    .tweet-text {
-      margin-bottom: 15px;
-    }
-    
-    .tweet-actions {
-      color: #657786;
-      font-size: 14px;
-    }
-    
-    .tweet-action {
-      margin-right: 15px;
-    }
-    
-    .loading-message {
-      text-align: center;
-      padding: 20px;
-      color: #657786;
-    }
-    
-    footer {
-      margin-top: 30px;
-      padding: 20px 0;
-      background: #1e2b38;
-      color: white;
-      font-size: 13px;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="container">
-      <h1>Crypto Twitter Tweet Archive</h1>
-      <p>Crypto Twitter tweets preserved for historical record.</p>
-      <p>Key figures whose statements on social media are important for research and for communities.</p>
-      <p>This archive preserves these statements until future researchers can integrate them if they become unavailable at the original platforms.</p>
-    </div>
-  </header>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Political Tweet Archive</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.3.2/papaparse.min.js"></script>
 
-  <div class="container">
-    <div class="stats">
-      <div class="stats-count">
-        <div class="stat">
-          <p class="stat-number" id="account-count">0</p>
-          <p class="stat-label">Accounts</p>
-        </div>
-        <div class="stat">
-          <p class="stat-number" id="tweet-count">0</p>
-          <p class="stat-label">Tweets</p>
-        </div>
-      </div>
-    </div>
-
-    <h2 class="archive-heading">Recently Archived</h2>
-    
-    <div class="filters">
-      <select id="user-filter">
-        <option value="all">All Users</option>
-      </select>
-      <input type="text" id="search-input" placeholder="Search tweets...">
-    </div>
-
-    <div id="tweets-container">
-      <div class="loading-message">Loading tweets...</div>
-    </div>
-  </div>
-
-  <footer>
-    <div class="container">
-      <p>© 2025 Crypto Twitter Tweet Archive. All materials are preserved with attribution to original creators.</p>
-    </div>
-  </footer>
-
-  <script>
-    // Global variables
-    let allTweets = [];
-    let users = new Set();
-    const tweetsContainer = document.getElementById('tweets-container');
-    const userFilter = document.getElementById('user-filter');
-    const searchInput = document.getElementById('search-input');
-    const accountCount = document.getElementById('account-count');
-    const tweetCount = document.getElementById('tweet-count');
-    
-    // Initialize the app
-    async function init() {
-      try {
-        // Load all tweets from all available JSON files
-        const tweetsFiles = await getAvailableTweetFiles();
-        
-        for (const file of tweetsFiles) {
-          const username = file.replace('.json', '');
-          users.add(username);
-          
-          try {
-            const response = await fetch(`data/users/${file}`);
-            if (response.ok) {
-              const tweets = await response.json();
-              
-              // Add username to each tweet
-              tweets.forEach(tweet => {
-                if (!tweet._username) {
-                  tweet._username = username;
-                }
-              });
-              
-              allTweets = allTweets.concat(tweets);
-            }
-          } catch (error) {
-            console.error(`Error loading ${file}:`, error);
-          }
+    <style>
+        .tweet-card {
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            padding: 12px;
+            transition: background-color 0.2s ease; /* Added 'ease' for smooth transition */
         }
-        
-        // Sort tweets by date
-        allTweets.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        
-        // Update stats
-        accountCount.textContent = users.size;
-        tweetCount.textContent = allTweets.length;
-        
-        // Populate user filter
-        populateUserFilter();
-        
-        // Display tweets
-        displayTweets(allTweets);
-        
-        // Add event listeners
-        setupEventListeners();
-        
-      } catch (error) {
-        console.error('Error initializing app:', error);
-        tweetsContainer.innerHTML = `<div class="error">Error loading tweets: ${error.message}</div>`;
-      }
-    }
-    
-    // Simulate getting available tweet files (replace with actual API call if needed)
-    async function getAvailableTweetFiles() {
-      // In a real implementation, this would be an API call to list files in the directory
-      // For now, hard-coding the filenames
-      return ['giganticrebirth.json', 'user1.json', 'user2.json'];
-    }
-    
-    // Populate user filter dropdown
-    function populateUserFilter() {
-      // Clear existing options except "All Users"
-      while (userFilter.options.length > 1) {
-        userFilter.remove(1);
-      }
-      
-      // Add option for each user
-      users.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user;
-        option.textContent = `@${user}`;
-        userFilter.appendChild(option);
-      });
-    }
-    
-    // Display tweets
-    function displayTweets(tweets) {
-      // Clear container
-      tweetsContainer.innerHTML = '';
-      
-      if (tweets.length === 0) {
-        tweetsContainer.innerHTML = '<div class="no-results">No tweets found</div>';
-        return;
-      }
-      
-      // Create tweet elements
-      tweets.forEach(tweet => {
-        const tweetElement = createTweetElement(tweet);
-        tweetsContainer.appendChild(tweetElement);
-      });
-    }
-    
-    // Create single tweet element
-    function createTweetElement(tweet) {
-      const tweetDiv = document.createElement('div');
-      tweetDiv.className = 'tweet';
-      
-      const user = tweet.user || {};
-      const username = user.screen_name || tweet._username || 'unknown';
-      const name = user.name || username;
-      
-      // Format date
-      const date = new Date(tweet.created_at);
-      const formattedDate = date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-      
-      // Avatar HTML
-      let avatarHtml = '';
-      if (user.profile_image_url) {
-        avatarHtml = `<img src="${user.profile_image_url}" alt="@${username}" class="avatar">`;
-      } else {
-        avatarHtml = `<div class="avatar default-avatar">@</div>`;
-      }
-      
-      // Tweet HTML
-      tweetDiv.innerHTML = `
-        <div class="tweet-header">
-          ${avatarHtml}
-          <div class="user-info">
-            <p class="user-name">${name}</p>
-            <p class="user-screen-name">@${username}</p>
-          </div>
-          <div class="tweet-date">${formattedDate}</div>
+        .tweet-card:hover {
+            background-color: #f8f9fa;
+        }
+        .archived-tag, .reply-tag {
+            background-color: var(--tag-bg, #2196F3); /* Use CSS variable for flexibility */
+            color: white;
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .reply-tag {
+            background-color: #4CAF50; /* Override for reply tag */
+        }
+        .tweet-card p {
+            white-space: pre-wrap; /* Ensures text wraps correctly */
+            word-break: break-word; /* Ensures long words break correctly */
+            overflow-wrap: break-word; /* Ensures long strings break correctly */
+            max-height: none; /* Ensure no height restriction */
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Top navigation bar -->
+    <nav class="bg-gray-800 text-white p-3">
+        <div class="container mx-auto flex justify-between items-center">
+            <a href="index.html" class="text-xl font-bold">Crypto Twitter Tweet Archive</a>
+            <div class="space-x-4">
+                <a href="index.html" class="hover:text-gray-300">Home</a>
+                <a href="figures.html" class="hover:text-gray-300">Figures</a>
+                <a href="#about" class="hover:text-gray-300">About</a>
+            </div>
         </div>
-        <div class="tweet-text">${tweet.text || ''}</div>
-        <div class="tweet-actions">
-          <span class="tweet-action">
-            ${tweet.retweet_count || 0} Retweets
-          </span>
-          <span class="tweet-action">
-            ${tweet.favorite_count || 0} Likes
-          </span>
+    </nav>
+
+    <!-- Main content - will be replaced by specific page content -->
+    <div id="app">
+        <!-- Home page content -->
+        <div id="home-page" class="container mx-auto p-4 md:p-6">
+            <div class="bg-gray-800 text-white p-8 rounded-lg shadow-md mb-8">
+                <h1 class="text-3xl font-bold mb-2">Crypto Twitter tweets,<br>preserved for historical record.</h1>
+                <p class="mb-4">Key figures make statements on social media that are important for research and for knowledge.</p>
+                <p class="mb-4">This website archives those statements and makes them available even if they become inaccessible on the original platform.</p>
+                <p class="text-sm mb-6">Note: OsintMao.</p>
+                <a href="figures.html" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Explore figures</a>
+            </div>
+
+            <div class="grid grid-cols-3 gap-8 text-center mb-8">
+                <div>
+                    <h3 class="text-gray-500 text-sm">FIGURES</h3>
+                    <p class="text-2xl font-bold" id="total-figures">--</p>
+                </div>
+                <div>
+                    <h3 class="text-gray-500 text-sm">TWEETS ARCHIVED</h3>
+                    <p class="text-2xl font-bold" id="tweets-saved">--</p>
+                </div>
+                <div>
+                    <h3 class="text-gray-500 text-sm">TOTAL ENGAGEMENTS</h3>
+                    <p class="text-2xl font-bold" id="total-engagements">--</p>
+                </div>
+            </div>
+
+            <h2 class="text-xl font-bold mb-4">Recently Archived</h2>
+            <div id="recent-tweets" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <!-- Recent tweets will be loaded here -->
+                <div class="animate-pulse">
+                    <div class="bg-white rounded-lg p-4 shadow">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 bg-gray-300 rounded-full mr-3"></div>
+                            <div class="w-2/3 h-4 bg-gray-300 rounded"></div>
+                        </div>
+                        <div class="h-20 bg-gray-200 rounded mb-3"></div>
+                        <div class="h-4 bg-gray-300 rounded w-1/4"></div>
+                    </div>
+                </div>
+                <!-- More loading placeholders -->
+            </div>
         </div>
-      `;
-      
-      return tweetDiv;
-    }
-    
-    // Filter tweets based on user selection and search input
-    function filterTweets() {
-      const selectedUser = userFilter.value;
-      const searchText = searchInput.value.toLowerCase().trim();
-      
-      let filtered = allTweets;
-      
-      // Filter by user
-      if (selectedUser !== 'all') {
-        filtered = filtered.filter(tweet => {
-          const tweetUser = tweet._username || (tweet.user ? tweet.user.screen_name : null);
-          return tweetUser === selectedUser;
-        });
-      }
-      
-      // Filter by search text
-      if (searchText) {
-        filtered = filtered.filter(tweet => {
-          const tweetText = (tweet.text || '').toLowerCase();
-          const userName = ((tweet.user ? tweet.user.name : '') || '').toLowerCase();
-          const userScreenName = ((tweet.user ? tweet.user.screen_name : '') || tweet._username || '').toLowerCase();
-          
-          return tweetText.includes(searchText) || 
-                 userName.includes(searchText) || 
-                 userScreenName.includes(searchText);
-        });
-      }
-      
-      // Display filtered tweets
-      displayTweets(filtered);
-    }
-    
-    // Set up event listeners
-    function setupEventListeners() {
-      userFilter.addEventListener('change', filterTweets);
-      
-      let debounceTimeout;
-      searchInput.addEventListener('input', () => {
-        clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(filterTweets, 300);
-      });
-    }
-    
-    // Start the app
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
+
+        <!-- Figures page content -->
+        <div id="figures-page" class="container mx-auto p-4 md:p-6 hidden">
+            <h1 class="text-3xl font-bold mb-6">Figures</h1>
+            <p class="mb-4">Public figures currently being tracked in our tweet archive.</p>
+
+            <div class="mb-6">
+                <input type="text" id="figure-search" placeholder="Search figures..."
+                    class="w-full p-2 border border-gray-300 rounded">
+            </div>
+
+            <div id="figures-list" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Figures will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Individual figure page content -->
+        <div id="figure-detail-page" class="container mx-auto p-4 md:p-6 hidden">
+            <div class="flex items-center mb-6">
+                <div id="figure-avatar" class="w-16 h-16 bg-gray-300 rounded-full mr-4"></div>
+                <div>
+                    <h1 id="figure-name" class="text-2xl font-bold"></h1>
+                    <p id="figure-username" class="text-gray-600"></p>
+                </div>
+            </div>
+
+            <div class="mb-6 flex flex-wrap gap-2">
+                <a href="#" id="all-tweets-btn" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">All</a>
+                <a href="#" id="replies-btn" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Replies</a>
+                <a href="#" id="popular-btn" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Most Popular</a>
+            </div>
+
+            <div id="tweets-container">
+                <!-- Tweets will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Tweet detail page -->
+        <div id="tweet-detail-page" class="container mx-auto p-4 md:p-6 hidden">
+            <div id="tweet-detail-container">
+                <!-- Tweet detail will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-gray-800 text-white p-6 mt-8">
+        <div class="container mx-auto">
+            <p>&copy; 2025 Crypto Twitter Tweet Archive. For research and accountability purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Main data object that will store our tweets and figures
+        let archiveData = {
+            figures: [],
+            tweets: []
+        };
+
+        // Utility functions
+        function formatDate(dateString) {
+            return moment(dateString).format('MMM D, YYYY [at] h:mm A');
+        }
+
+        function getTimeSince(dateString) {
+            return moment(dateString).fromNow();
+        }
+
+        function getFigureById(id) {
+            return archiveData.figures.find(figure => figure.id === parseInt(id));
+        }
+
+        function getFigureByUsername(username) {
+            return archiveData.figures.find(figure => figure.username === username || figure.username === '@' + username);
+        }
+
+        function getTweetsByFigureId(figureId, onlyReplies = false, sortByPopularity = false) {
+            let tweets = archiveData.tweets.filter(tweet => {
+                if (onlyReplies) {
+                    return tweet.figureId === parseInt(figureId) && tweet.isReply;
+                }
+                return tweet.figureId === parseInt(figureId);
+            });
+
+            if (sortByPopularity) {
+                // Sort by engagement (likes + retweets + replies)
+                tweets.sort((a, b) => {
+                    const aEngagement = (a.likes || 0) + (a.retweetCount || 0) + (a.replies || 0);
+                    const bEngagement = (b.likes || 0) + (b.retweetCount || 0) + (b.replies || 0);
+                    return bEngagement - aEngagement;
+                });
+            } else {
+                // Sort by date (newest first)
+                tweets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            }
+
+            return tweets;
+        }
+
+        function getTweetById(id) {
+            return archiveData.tweets.find(tweet => tweet.id === id);
+        }
+
+        // Calculate total engagement
+        function calculateTotalEngagement() {
+            return archiveData.tweets.reduce((total, tweet) => {
+                return total + (tweet.likes || 0) + (tweet.retweetCount || 0) + (tweet.replies || 0);
+            }, 0);
+        }
+
+        // Navigation functions
+        function showPage(pageId) {
+            document.querySelectorAll('#app > div').forEach(page => {
+                page.classList.add('hidden');
+            });
+            document.getElementById(pageId).classList.remove('hidden');
+        }
+
+        function goToHome() {
+            showPage('home-page');
+            loadHomePageData();
+            window.history.pushState({page: 'home'}, 'Home', 'index.html');
+        }
+
+        function goToFigures() {
+            showPage('figures-page');
+            loadFiguresPage();
+            window.history.pushState({page: 'figures'}, 'Figures', 'figures.html');
+        }
+
+        function goToFigureDetail(figureId) {
+            showPage('figure-detail-page');
+            loadFigureDetail(figureId);
+            window.history.pushState({page: 'figure', id: figureId}, 'Figure Detail', `figure.html?id=${figureId}`);
+        }
+
+        function goToTweetDetail(tweetId) {
+            showPage('tweet-detail-page');
+            loadTweetDetail(tweetId);
+            window.history.pushState({page: 'tweet', id: tweetId}, 'Tweet Detail', `tweet.html?id=${tweetId}`);
+        }
+
+        // Page loading functions
+        function loadHomePageData() {
+            // Update stats
+            document.getElementById('total-figures').textContent = archiveData.figures.length;
+            document.getElementById('tweets-saved').textContent = archiveData.tweets.length.toLocaleString();
+            document.getElementById('total-engagements').textContent = calculateTotalEngagement().toLocaleString();
+
+            // Load recent tweets
+            const recentTweets = [...archiveData.tweets]
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+                .slice(0, 6);
+
+            const recentTweetsContainer = document.getElementById('recent-tweets');
+            recentTweetsContainer.innerHTML = '';
+
+            recentTweets.forEach(tweet => {
+                const figure = getFigureById(tweet.figureId);
+
+                const tweetElement = document.createElement('div');
+                tweetElement.className = 'tweet-card bg-white rounded-lg shadow-md';
+                tweetElement.innerHTML = `
+                    <div class="flex items-center mb-2">
+                        <img src="${figure.avatar}" alt="${figure.name}" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <div class="font-bold">${figure.name} <span class="font-normal text-gray-600">${figure.username}</span></div>
+                            <div class="text-sm text-gray-500">${formatDate(tweet.createdAt)}</div>
+                        </div>
+                        <div class="ml-auto flex gap-2">
+                            ${tweet.isReply ? '<span class="reply-tag">Reply</span>' : ''}
+                            <span class="archived-tag">Archived</span>
+                        </div>
+                    </div>
+                    <p class="mb-2">${tweet.text}</p>
+                    <div class="text-sm text-gray-500 flex gap-4">
+                        <span>❤️ ${tweet.likes || 0}</span>
+                        <span>🔄 ${tweet.retweetCount || 0}</span>
+                        <span>💬 ${tweet.replies || 0}</span>
+                    </div>
+                `;
+
+                tweetElement.addEventListener('click', () => {
+                    goToTweetDetail(tweet.id);
+                });
+
+                recentTweetsContainer.appendChild(tweetElement);
+            });
+        }
+
+        function loadFiguresPage() {
+            const figuresList = document.getElementById('figures-list');
+            figuresList.innerHTML = '';
+
+            // Sort figures by tweet count
+            const sortedFigures = [...archiveData.figures].sort((a, b) => b.totalTweets - a.totalTweets);
+
+            sortedFigures.forEach(figure => {
+                const figureCard = document.createElement('div');
+                figureCard.className = 'bg-white rounded-lg shadow-md p-4';
+                figureCard.innerHTML = `
+                    <div class="flex items-center mb-3">
+                        <img src="${figure.avatar}" alt="${figure.name}" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <div class="font-bold">${figure.name}</div>
+                            <div class="text-sm text-gray-600">${figure.username}</div>
+                        </div>
+                    </div>
+                    <div class="text-sm mb-3">
+                        <span class="font-bold">${figure.totalTweets.toLocaleString()}</span> tweets archived
+                    </div>
+                    <a href="#" class="block text-center bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold py-1 px-2 rounded">
+                        View tweets
+                    </a>
+                `;
+
+                figureCard.querySelector('a').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    goToFigureDetail(figure.id);
+                });
+
+                figuresList.appendChild(figureCard);
+            });
+
+            // Set up search functionality
+            const searchInput = document.getElementById('figure-search');
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+
+                document.querySelectorAll('#figures-list > div').forEach(card => {
+                    const figureName = card.querySelector('.font-bold').textContent.toLowerCase();
+                    const username = card.querySelector('.text-gray-600').textContent.toLowerCase();
+
+                    if (figureName.includes(searchTerm) || username.includes(searchTerm)) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function loadFigureDetail(figureId) {
+            const figure = getFigureById(figureId);
+
+            // Update figure info
+            document.getElementById('figure-name').textContent = figure.name;
+            document.getElementById('figure-username').textContent = figure.username;
+            document.getElementById('figure-avatar').innerHTML = `<img src="${figure.avatar}" alt="${figure.name}" class="w-16 h-16 rounded-full">`;
+
+            // Load tweets
+            loadFigureTweets(figureId, false, false);
+
+            // Set up tweet filter buttons
+            document.getElementById('all-tweets-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                loadFigureTweets(figureId, false, false);
+                updateActiveFilterButton('all-tweets-btn');
+            });
+
+            document.getElementById('replies-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                loadFigureTweets(figureId, true, false);
+                updateActiveFilterButton('replies-btn');
+            });
+
+            document.getElementById('popular-btn').addEventListener('click', (e) => {
+                e.preventDefault();
+                loadFigureTweets(figureId, false, true);
+                updateActiveFilterButton('popular-btn');
+            });
+
+            updateActiveFilterButton('all-tweets-btn');
+        }
+
+        function updateActiveFilterButton(activeButtonId) {
+            document.querySelectorAll('#figure-detail-page .mb-6 a').forEach(btn => {
+                if (btn.id === activeButtonId) {
+                    btn.classList.add('bg-gray-200');
+                } else {
+                    btn.classList.remove('bg-gray-200');
+                }
+            });
+        }
+
+        function loadFigureTweets(figureId, onlyReplies, sortByPopularity) {
+            const tweets = getTweetsByFigureId(figureId, onlyReplies, sortByPopularity);
+            const tweetsContainer = document.getElementById('tweets-container');
+            tweetsContainer.innerHTML = '';
+
+            if (tweets.length === 0) {
+                tweetsContainer.innerHTML = '<p class="text-gray-500">No tweets found.</p>';
+                return;
+            }
+
+            tweets.forEach(tweet => {
+                const figure = getFigureById(tweet.figureId);
+
+                const tweetElement = document.createElement('div');
+                tweetElement.className = `tweet-card bg-white rounded-lg shadow-md mb-4`;
+                tweetElement.innerHTML = `
+                    <div class="flex items-center mb-2">
+                        <img src="${figure.avatar}" alt="${figure.name}" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <div class="font-bold">${figure.name} <span class="font-normal text-gray-600">${figure.username}</span></div>
+                            <div class="text-sm text-gray-500">${formatDate(tweet.createdAt)}</div>
+                        </div>
+                        <div class="ml-auto flex gap-2">
+                            ${tweet.isReply ? '<span class="reply-tag">Reply</span>' : ''}
+                            <span class="archived-tag">Archived</span>
+                        </div>
+                    </div>
+                    <p class="mb-2">${tweet.text}</p>
+                    <div class="text-sm text-gray-500 flex gap-4">
+                        <span>❤️ ${tweet.likes || 0}</span>
+                        <span>🔄 ${tweet.retweetCount || 0}</span>
+                        <span>💬 ${tweet.replies || 0}</span>
+                    </div>
+                `;
+
+                tweetElement.addEventListener('click', () => {
+                    goToTweetDetail(tweet.id);
+                });
+
+                tweetsContainer.appendChild(tweetElement);
+            });
+        }
+
+        function loadTweetDetail(tweetId) {
+            const tweet = getTweetById(tweetId);
+            const figure = getFigureById(tweet.figureId);
+
+            const tweetDetailContainer = document.getElementById('tweet-detail-container');
+
+            tweetDetailContainer.innerHTML = `
+                <div class="mb-4">
+                    <a href="#" class="text-blue-500 hover:underline" id="back-to-figure">← Back to ${figure.name}</a>
+                </div>
+                <div class="tweet-card bg-white rounded-lg shadow-md">
+                    <div class="flex items-center mb-3">
+                        <img src="${figure.avatar}" alt="${figure.name}" class="w-10 h-10 rounded-full mr-3">
+                        <div>
+                            <div class="font-bold">${figure.name} <span class="font-normal text-gray-600">${figure.username}</span></div>
+                            <div class="text-sm text-gray-500">${formatDate(tweet.createdAt)}</div>
+                        </div>
+                        <div class="ml-auto flex gap-2">
+                            ${tweet.isReply ? '<span class="reply-tag">Reply</span>' : ''}
+                            <span class="archived-tag">Archived</span>
+                        </div>
+                    </div>
+                    <p class="text-lg mb-4">${tweet.text}</p>
+                    <div class="border-t pt-3">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div>
+                                <div class="text-sm text-gray-500">Likes</div>
+                                <div>❤️ ${tweet.likes || 0}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500">Retweets</div>
+                                <div>🔄 ${tweet.retweetCount || 0}</div>
+                            </div>
+                            <div>
+                                <div class="text-sm text-gray-500">Replies</div>
+                                <div>💬 ${tweet.replies || 0}</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="text-sm text-gray-500">Posted</div>
+                            <div>${formatDate(tweet.createdAt)}</div>
+                        </div>
+                        ${tweet.isReply ? `
+                            <div class="mb-3">
+                                <div class="text-sm text-gray-500">In Reply To</div>
+                                <div>Tweet ID: ${tweet.inReplyToStatusId || 'Unknown'}</div>
+                            </div>
+                        ` : ''}
+                        <div class="mt-4 pt-3 border-t">
+                            <a href="${tweet.permalink}" target="_blank" class="text-blue-500 hover:underline">View original tweet</a>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('back-to-figure').addEventListener('click', (e) => {
+                e.preventDefault();
+                goToFigureDetail(figure.id);
+            });
+        }
+
+        // Process raw tweet data into our application format
+        function processRawTweetData(rawTweets) {
+            const figures = {};
+
+            // First pass: identify unique figures and collect statistics
+            rawTweets.forEach(tweet => {
+                // Create or update figure entry for this username
+                if (!figures[tweet.username]) {
+                    figures[tweet.username] = {
+                        id: Object.keys(figures).length + 1,
+                        name: tweet.username, // Use username as name if you don't have real names
+                        username: '@' + tweet.username,
+                        avatar: tweet.avatar, // Use the avatar from the tweet data
+                        totalTweets: 0
+                    };
+                }
+
+                // Count tweets for this figure
+                figures[tweet.username].totalTweets++;
+            });
+
+            // Convert figures object to array
+            const figuresArray = Object.values(figures);
+
+            // Second pass: format tweets to match our application needs
+            const processedTweets = rawTweets.map(tweet => {
+                return {
+                    id: tweet.id,
+                    figureId: figures[tweet.username].id,
+                    text: tweet.text,
+                    createdAt: tweet.createdAt,
+                    likes: tweet.likes,
+                    retweetCount: tweet.retweetCount,
+                    replies: tweet.replies,
+                    isReply: tweet.isReply,
+                    isRetweet: tweet.isRetweet,
+                    permalink: tweet.permanentUrl,
+                    inReplyToStatusId: tweet.inReplyToStatusId
+                };
+            });
+
+            return {
+                figures: figuresArray,
+                tweets: processedTweets
+            };
+        }
+
+        // Initialize the application
+        function initApp() {
+            // Load tweet data
+            fetch('data/tweets_with_avatars.json')
+                .then(response => response.json())
+                .then(rawData => {
+                    // Process the raw data into our application format
+                    archiveData = processRawTweetData(rawData);
+
+                    // Parse URL to determine which page to show
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const path = window.location.pathname;
+
+                    if (path.includes('figures.html')) {
+                        goToFigures();
+                    } else if (path.includes('figure.html')) {
+                        const figureId = urlParams.get('id');
+                        if (figureId) {
+                            goToFigureDetail(parseInt(figureId));
+                        } else {
+                            goToFigures();
+                        }
+                    } else if (path.includes('tweet.html')) {
+                        const tweetId = urlParams.get('id');
+                        if (tweetId) {
+                            goToTweetDetail(tweetId);
+                        } else {
+                            goToHome();
+                        }
+                    } else {
+                        goToHome();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading tweet data:', error);
+                    // If loading fails, show an error message
+                    document.body.innerHTML = `
+                        <div class="container mx-auto p-8 text-center">
+                            <h1 class="text-2xl text-red-600 mb-4">Error Loading Data</h1>
+                            <p>Unable to load tweet data. Please check that data/tweets_with_avatars.json exists and is properly formatted.</p>
+                            <p class="text-gray-600 mt-4">${error.message}</p>
+                        </div>
+                    `;
+                });
+
+            // Set up navigation event listeners
+            document.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    const href = link.getAttribute('href');
+                    if (href === 'index.html') {
+                        e.preventDefault();
+                        goToHome();
+                    } else if (href === 'figures.html') {
+                        e.preventDefault();
+                        goToFigures();
+                    }
+                });
+            });
+
+            // Handle back/forward browser navigation
+            window.addEventListener('popstate', (event) => {
+                if (event.state) {
+                    switch (event.state.page) {
+                        case 'home':
+                            showPage('home-page');
+                            loadHomePageData();
+                            break;
+                        case 'figures':
+                            showPage('figures-page');
+                            loadFiguresPage();
+                            break;
+                        case 'figure':
+                            showPage('figure-detail-page');
+                            loadFigureDetail(event.state.id);
+                            break;
+                        case 'tweet':
+                            showPage('tweet-detail-page');
+                            loadTweetDetail(event.state.id);
+                            break;
+                    }
+                }
+            });
+        }
+
+        // Add an event listener for when the DOM is fully loaded
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
 </body>
 </html>
