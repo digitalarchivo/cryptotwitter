@@ -1,0 +1,19 @@
+{
+  "name": "cryptotwitter",
+  "version": "1.0.0",
+  "description": "Crypto Twitter feed application",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "^12.0.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
