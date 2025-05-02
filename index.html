@@ -4,7 +4,156 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crypto Twitter Tweet Archive</title>
-  <link rel="stylesheet" href="public/css/styles.css">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      line-height: 1.5;
+      color: #333;
+      background: #fff;
+    }
+    
+    .container {
+      max-width: 930px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+    
+    header {
+      background: #1e2b38;
+      color: white;
+      padding: 20px 0;
+    }
+    
+    header h1 {
+      margin: 0 0 15px 0;
+    }
+    
+    header p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    
+    .stats {
+      margin: 20px 0;
+    }
+    
+    .stats-count {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .stat {
+      margin-right: 20px;
+    }
+    
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .stat-label {
+      margin: 0;
+      color: #666;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    
+    .archive-heading {
+      margin: 30px 0 15px 0;
+    }
+    
+    .filters {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    
+    select, input {
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+    }
+    
+    .tweet {
+      border: 1px solid #e1e8ed;
+      border-radius: 5px;
+      padding: 15px;
+      margin-bottom: 15px;
+      background: white;
+    }
+    
+    .tweet-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin-right: 10px;
+    }
+    
+    .default-avatar {
+      background: #1da1f2;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-weight: bold;
+      margin: 0;
+    }
+    
+    .user-screen-name {
+      color: #657786;
+      margin: 0;
+      font-size: 14px;
+    }
+    
+    .tweet-date {
+      color: #657786;
+      font-size: 14px;
+    }
+    
+    .tweet-text {
+      margin-bottom: 15px;
+    }
+    
+    .tweet-actions {
+      color: #657786;
+      font-size: 14px;
+    }
+    
+    .tweet-action {
+      margin-right: 15px;
+    }
+    
+    .loading-message {
+      text-align: center;
+      padding: 20px;
+      color: #657786;
+    }
+    
+    footer {
+      margin-top: 30px;
+      padding: 20px 0;
+      background: #1e2b38;
+      color: white;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body>
   <header>
@@ -16,34 +165,33 @@
     </div>
   </header>
 
-  <main class="container">
+  <div class="container">
     <div class="stats">
-      <div class="stat">
-        <div class="stat-value" id="account-count">0</div>
-        <div class="stat-label">Accounts</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="tweet-count">0</div>
-        <div class="stat-label">Tweets</div>
-      </div>
-    </div>
-
-    <div class="controls">
-      <h2>Recently Archived</h2>
-      <div class="filters">
-        <select id="user-filter">
-          <option value="all">All Users</option>
-          <!-- User options will be added dynamically -->
-        </select>
-        <input type="text" id="search" placeholder="Search tweets...">
+      <div class="stats-count">
+        <div class="stat">
+          <p class="stat-number" id="account-count">0</p>
+          <p class="stat-label">Accounts</p>
+        </div>
+        <div class="stat">
+          <p class="stat-number" id="tweet-count">0</p>
+          <p class="stat-label">Tweets</p>
+        </div>
       </div>
     </div>
 
-    <div id="tweets-container" class="tweets-container">
-      <!-- Tweets will be loaded here -->
-      <div class="loading">Loading tweets...</div>
+    <h2 class="archive-heading">Recently Archived</h2>
+    
+    <div class="filters">
+      <select id="user-filter">
+        <option value="all">All Users</option>
+      </select>
+      <input type="text" id="search-input" placeholder="Search tweets...">
     </div>
-  </main>
+
+    <div id="tweets-container">
+      <div class="loading-message">Loading tweets...</div>
+    </div>
+  </div>
 
   <footer>
     <div class="container">
@@ -51,6 +199,201 @@
     </div>
   </footer>
 
-  <script src="public/js/app.js"></script>
+  <script>
+    // Global variables
+    let allTweets = [];
+    let users = new Set();
+    const tweetsContainer = document.getElementById('tweets-container');
+    const userFilter = document.getElementById('user-filter');
+    const searchInput = document.getElementById('search-input');
+    const accountCount = document.getElementById('account-count');
+    const tweetCount = document.getElementById('tweet-count');
+    
+    // Initialize the app
+    async function init() {
+      try {
+        // Load all tweets from all available JSON files
+        const tweetsFiles = await getAvailableTweetFiles();
+        
+        for (const file of tweetsFiles) {
+          const username = file.replace('.json', '');
+          users.add(username);
+          
+          try {
+            const response = await fetch(`data/users/${file}`);
+            if (response.ok) {
+              const tweets = await response.json();
+              
+              // Add username to each tweet
+              tweets.forEach(tweet => {
+                if (!tweet._username) {
+                  tweet._username = username;
+                }
+              });
+              
+              allTweets = allTweets.concat(tweets);
+            }
+          } catch (error) {
+            console.error(`Error loading ${file}:`, error);
+          }
+        }
+        
+        // Sort tweets by date
+        allTweets.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        // Update stats
+        accountCount.textContent = users.size;
+        tweetCount.textContent = allTweets.length;
+        
+        // Populate user filter
+        populateUserFilter();
+        
+        // Display tweets
+        displayTweets(allTweets);
+        
+        // Add event listeners
+        setupEventListeners();
+        
+      } catch (error) {
+        console.error('Error initializing app:', error);
+        tweetsContainer.innerHTML = `<div class="error">Error loading tweets: ${error.message}</div>`;
+      }
+    }
+    
+    // Simulate getting available tweet files (replace with actual API call if needed)
+    async function getAvailableTweetFiles() {
+      // In a real implementation, this would be an API call to list files in the directory
+      // For now, hard-coding the filenames
+      return ['giganticrebirth.json', 'user1.json', 'user2.json'];
+    }
+    
+    // Populate user filter dropdown
+    function populateUserFilter() {
+      // Clear existing options except "All Users"
+      while (userFilter.options.length > 1) {
+        userFilter.remove(1);
+      }
+      
+      // Add option for each user
+      users.forEach(user => {
+        const option = document.createElement('option');
+        option.value = user;
+        option.textContent = `@${user}`;
+        userFilter.appendChild(option);
+      });
+    }
+    
+    // Display tweets
+    function displayTweets(tweets) {
+      // Clear container
+      tweetsContainer.innerHTML = '';
+      
+      if (tweets.length === 0) {
+        tweetsContainer.innerHTML = '<div class="no-results">No tweets found</div>';
+        return;
+      }
+      
+      // Create tweet elements
+      tweets.forEach(tweet => {
+        const tweetElement = createTweetElement(tweet);
+        tweetsContainer.appendChild(tweetElement);
+      });
+    }
+    
+    // Create single tweet element
+    function createTweetElement(tweet) {
+      const tweetDiv = document.createElement('div');
+      tweetDiv.className = 'tweet';
+      
+      const user = tweet.user || {};
+      const username = user.screen_name || tweet._username || 'unknown';
+      const name = user.name || username;
+      
+      // Format date
+      const date = new Date(tweet.created_at);
+      const formattedDate = date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+      
+      // Avatar HTML
+      let avatarHtml = '';
+      if (user.profile_image_url) {
+        avatarHtml = `<img src="${user.profile_image_url}" alt="@${username}" class="avatar">`;
+      } else {
+        avatarHtml = `<div class="avatar default-avatar">@</div>`;
+      }
+      
+      // Tweet HTML
+      tweetDiv.innerHTML = `
+        <div class="tweet-header">
+          ${avatarHtml}
+          <div class="user-info">
+            <p class="user-name">${name}</p>
+            <p class="user-screen-name">@${username}</p>
+          </div>
+          <div class="tweet-date">${formattedDate}</div>
+        </div>
+        <div class="tweet-text">${tweet.text || ''}</div>
+        <div class="tweet-actions">
+          <span class="tweet-action">
+            ${tweet.retweet_count || 0} Retweets
+          </span>
+          <span class="tweet-action">
+            ${tweet.favorite_count || 0} Likes
+          </span>
+        </div>
+      `;
+      
+      return tweetDiv;
+    }
+    
+    // Filter tweets based on user selection and search input
+    function filterTweets() {
+      const selectedUser = userFilter.value;
+      const searchText = searchInput.value.toLowerCase().trim();
+      
+      let filtered = allTweets;
+      
+      // Filter by user
+      if (selectedUser !== 'all') {
+        filtered = filtered.filter(tweet => {
+          const tweetUser = tweet._username || (tweet.user ? tweet.user.screen_name : null);
+          return tweetUser === selectedUser;
+        });
+      }
+      
+      // Filter by search text
+      if (searchText) {
+        filtered = filtered.filter(tweet => {
+          const tweetText = (tweet.text || '').toLowerCase();
+          const userName = ((tweet.user ? tweet.user.name : '') || '').toLowerCase();
+          const userScreenName = ((tweet.user ? tweet.user.screen_name : '') || tweet._username || '').toLowerCase();
+          
+          return tweetText.includes(searchText) || 
+                 userName.includes(searchText) || 
+                 userScreenName.includes(searchText);
+        });
+      }
+      
+      // Display filtered tweets
+      displayTweets(filtered);
+    }
+    
+    // Set up event listeners
+    function setupEventListeners() {
+      userFilter.addEventListener('change', filterTweets);
+      
+      let debounceTimeout;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(filterTweets, 300);
+      });
+    }
+    
+    // Start the app
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 </body>
 </html>
