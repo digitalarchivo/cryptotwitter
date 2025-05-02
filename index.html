@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Twitter Tweet Archive</title>
+  <link rel="stylesheet" href="public/css/styles.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1>Crypto Twitter Tweet Archive</h1>
+      <p>Crypto Twitter tweets preserved for historical record.</p>
+      <p>Key figures whose statements on social media are important for research and for communities.</p>
+      <p>This archive preserves these statements until future researchers can integrate them if they become unavailable at the original platforms.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value" id="account-count">0</div>
+        <div class="stat-label">Accounts</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="tweet-count">0</div>
+        <div class="stat-label">Tweets</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <h2>Recently Archived</h2>
+      <div class="filters">
+        <select id="user-filter">
+          <option value="all">All Users</option>
+          <!-- User options will be added dynamically -->
+        </select>
+        <input type="text" id="search" placeholder="Search tweets...">
+      </div>
+    </div>
+
+    <div id="tweets-container" class="tweets-container">
+      <!-- Tweets will be loaded here -->
+      <div class="loading">Loading tweets...</div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>© 2025 Crypto Twitter Tweet Archive. All materials are preserved with attribution to original creators.</p>
+    </div>
+  </footer>
+
+  <script src="public/js/app.js"></script>
+</body>
+</html>
