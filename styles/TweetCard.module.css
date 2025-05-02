@@ -1,0 +1,129 @@
+/* styles/TweetCard.module.css */
+.tweetCard {
+  border: 1px solid #e1e8ed;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: white;
+  max-width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tweetHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+}
+
+.profileImage {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+}
+
+.nameContainer {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.displayName {
+  font-weight: bold;
+  font-size: 16px;
+  color: #000;
+}
+
+.username {
+  color: #536471;
+  font-size: 14px;
+}
+
+.date {
+  color: #536471;
+  font-size: 14px;
+  display: block;
+  margin-top: 2px;
+}
+
+.tweetActions {
+  display: flex;
+  gap: 8px;
+}
+
+.replyButton, .archivedButton {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.replyButton {
+  background-color: #4caf50;
+  color: white;
+}
+
+.archivedButton {
+  background-color: #1d9bf0;
+  color: white;
+}
+
+.tweetContent {
+  margin-bottom: 16px;
+  width: 100%;
+  word-wrap: break-word; /* Important for long words */
+  overflow-wrap: break-word; /* Modern browsers */
+}
+
+.replyingTo {
+  color: #536471;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+/* This ensures the full text is displayed */
+.fullText {
+  white-space: pre-wrap; /* Preserves whitespace and wraps text */
+  font-size: 16px;
+  line-height: 1.5;
+  color: #0f1419;
+  width: 100%;
+  max-width: 100%; /* Ensures text doesn't overflow */
+  overflow: visible; /* Shows all content */
+}
+
+.tweetStats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #536471;
+  font-size: 14px;
+}
+
+/* Media query for smaller screens */
+@media (max-width: 600px) {
+  .tweetHeader {
+    flex-direction: column;
+  }
+  
+  .tweetActions {
+    margin-top: 12px;
+    align-self: flex-end;
+  }
+}
