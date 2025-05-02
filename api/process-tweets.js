@@ -1,8 +1,8 @@
 // api/process-tweets.js
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   try {
     // Define the path to the data directory
     const dataDirectory = path.join(process.cwd(), 'data');
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     console.error('Error processing tweet data:', error);
     return res.status(500).json({ error: 'Failed to process tweet data' });
   }
-}
+};
 
 /**
  * Process raw user tweet data into a standardized format
